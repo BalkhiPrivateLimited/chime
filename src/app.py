@@ -12,7 +12,7 @@ from penn_chime.presentation import (
     write_definitions,
     write_footer,
 )
-from penn_chime.settings import DEFAULTS
+# from penn_chime.settings import DEFAULTS
 from penn_chime.models import SimSirModel
 from penn_chime.charts import (
     build_admits_chart,
@@ -22,20 +22,59 @@ from penn_chime.charts import (
     build_table,
 )
 
+from penn_chime.parameters import (
+    Parameters,
+    Disposition,
+)
+
+import pandas as pd
+from datetime import date
+
+from penn_chime.datagrabber import fromSheet
+@st.cache
+def getDataFromGoogleSheets():
+    return fromSheet()
+data = getDataFromGoogleSheets()
+df = pd.DataFrame(data)
+
+st.sidebar.markdown(
+    """**Region Parameters**"""
+)
+selectedRegion = st.sidebar.selectbox("Select City", df.city)
+
+st.title("Region: "+selectedRegion)
+selectedRegionData = df.loc[df['city'] == selectedRegion]
+selectedIndex = selectedRegionData.index[0]
+# st.map(selectedRegionData)
+
+selectedRegionDefaults = Parameters(
+    population=selectedRegionData.population[selectedIndex],
+    current_hospitalized=selectedRegionData.current_hospitalized[selectedIndex],
+    doubling_time=selectedRegionData.doubling_time[selectedIndex],
+    # known_infected=selectedRegionData.known_infected[selectedIndex],
+    date_first_hospitalized=date(2020,3,7),
+    infectious_days=14,
+    market_share=0.15,
+    relative_contact_rate=selectedRegionData.relative_contact_rate[selectedIndex],
+    hospitalized=Disposition(selectedRegionData.hospitalized_rate[selectedIndex], selectedRegionData.hospitalized_length_of_stay[selectedIndex]),
+    icu=Disposition(selectedRegionData.icu_rate[selectedIndex], selectedRegionData.icu_length_of_stay[selectedIndex]),
+    ventilated=Disposition(selectedRegionData.ventilated_rate[selectedIndex], selectedRegionData.ventilated_length_of_stay[selectedIndex]),
+)
+
 # This is somewhat dangerous:
 # Hide the main menu with "Rerun", "run on Save", "clear cache", and "record a screencast"
 # This should not be hidden in prod, but removed
 # In dev, this should be shown
-st.markdown(hide_menu_style, unsafe_allow_html=True)
+# st.markdown(hide_menu_style, unsafe_allow_html=True)
 
-p = display_sidebar(st, DEFAULTS)
+p = display_sidebar(st, selectedRegionDefaults)
 m = SimSirModel(p)
 
-display_header(st, m, p)
+# display_header(st, m, p)
 
 if st.checkbox("Show more info about this tool"):
     notes = "The total size of the susceptible population will be the entire catchment area for our hospitals."
-    display_more_info(st=st, model=m, parameters=p, defaults=DEFAULTS, notes=notes)
+    display_more_info(st=st, model=m, parameters=p, defaults=selectedRegionDefaults, notes=notes)
 
 st.subheader("New Admissions")
 st.markdown("Projected number of **daily** COVID-19 admissions. \n\n _NOTE: Now including estimates of prior admissions for comparison._")

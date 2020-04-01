@@ -30,7 +30,9 @@ setup(
         "dash",
         "dash_bootstrap_components",
         "pyyaml",
-        "gunicorn"
+        "gunicorn",
+        "oauth2client",
+        "gspread"
     ],
     classifiers=[
         "Programming Language :: Python :: 3",

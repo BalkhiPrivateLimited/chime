@@ -1,9 +1,11 @@
 name: chime
-channels: 
+channels:
 - defaults
 - conda-forge
-dependencies: 
+dependencies:
 - python>=3.6
 - numpy
 - pandas
 - altair
+- oauth2client
+- gspread
